@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volodymyr's English Practice</title>
+<style>
+:root {
+  --blue:#8bbce8; --pink:#f4a9c7; --mint:#a9d9c7;
+  --yellow:#ffe29a; --purple:#c9b6ed; --ink:#35445b;
+  --cream:#fffaf0; --white:#ffffff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--cream);color:var(--ink);
+  font-family:"Trebuchet MS",Arial,sans-serif;
+}
+header{
+  text-align:center;padding:28px 15px 20px;
+  background:linear-gradient(120deg,#dceeff,#ffe2ec,#e2f6e9);
+}
+h1{font-size:clamp(27px,5vw,42px);margin:5px}
+header p{font-size:17px;margin:8px}
+.score{
+  display:inline-block;background:white;border-radius:30px;
+  padding:10px 20px;font-weight:bold;margin-top:10px;
+}
+main{max-width:850px;margin:24px auto;padding:0 15px 50px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px}
+.tab{
+  border:0;border-radius:18px;padding:11px 15px;
+  background:white;color:var(--ink);font-weight:bold;cursor:pointer;
+  box-shadow:0 3px 0 #e5dfd3;
+}
+.tab.active{background:var(--blue);color:#20364d}
+.panel{
+  display:none;background:white;border-radius:25px;padding:25px;
+  box-shadow:0 5px 18px #d9d1c566;
+}
+.panel.active{display:block}
+h2{text-align:center;margin-top:0;font-size:26px}
+.instruction{text-align:center;color:#718096;margin-bottom:20px}
+.question{
+  background:#f3f7fc;border-radius:20px;padding:22px;
+  text-align:center;margin:15px 0;
+}
+.big{font-size:38px;font-weight:bold;margin:15px}
+.options{
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:18px 0;
+}
+.choice{
+  border:2px solid #dce5ef;background:white;border-radius:15px;
+  padding:14px 22px;font-size:21px;font-weight:bold;
+  cursor:pointer;color:var(--ink);min-width:75px;
+}
+.choice:hover{background:#edf5ff;border-color:var(--blue)}
+.choice:disabled{cursor:default;opacity:.8}
+.choice.correct{background:#d9f4e6;border-color:#64bd8d}
+.choice.wrong{background:#ffe0e0;border-color:#e98d8d}
+.feedback{min-height:32px;text-align:center;font-weight:bold;font-size:18px;margin:12px}
+.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.action{
+  border:0;border-radius:14px;padding:12px 20px;
+  font-size:16px;font-weight:bold;cursor:pointer;background:var(--yellow);
+  color:var(--ink);
+}
+.action.next{background:var(--mint)}
+.action:disabled{opacity:.4;cursor:default}
+.hint{
+  text-align:center;color:#7b6a9c;min-height:25px;font-size:15px;
+}
+.progress{height:9px;background:#eee;border-radius:10px;overflow:hidden;margin:15px 0}
+.bar{height:100%;background:var(--mint);width:0%;transition:.3s}
+.word-card{
+  background:#fff3dc;border-radius:18px;padding:18px;
+  font-size:30px;font-weight:bold;text-align:center;min-width:100px;
+}
+.small-note{text-align:center;font-size:13px;color:#8490a0;margin-top:18px}
+footer{text-align:center;color:#9a9a9a;padding:20px}
+@media(max-width:500px){
+ .panel{padding:17px}.choice{padding:12px 16px}
+ .big{font-size:30px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div style="font-size:40px">🚀 ⭐ 🧩</div>
+  <h1>Volodymyr's English Practice</h1>
+  <p>Think, choose, learn and have fun!</p>
+  <div class="score">⭐ Stars: <span id="score">0</span></div>
+</header>
+
+<main>
+<nav class="tabs" id="tabs"></nav>
+<div id="panels"></div>
+<footer>Great job! Keep learning! 🌈</footer>
+</main>
+
+<script>
+const activities = [
+ {name:"Math",emoji:"🔢",type:"math"},
+ {name:"Math Signs",emoji:"➕",type:"signs"},
+ {name:"Compare",emoji:"⚖️",type:"compare"},
+ {name:"Teen or Ty",emoji:"🔊",type:"teen"},
+ {name:"Vowels",emoji:"🔤",type:"vowels"},
+ {name:"Phonics",emoji:"🐝",type:"phonics"},
+ {name:"Word Detective",emoji:"🕵️",type:"words"},
+ {name:"Sentences",emoji:"✏️",type:"sentences"}
+];
+
+let score=0;
+let current={};
+let completed={};
+const $=id=>document.getElementById(id);
+
+activities.forEach((a,i)=>{
+ const b=document.createElement("button");
+ b.className="tab"+(i===0?" active":"");
+ b.textContent=a.emoji+" "+a.name;
+ b.onclick=()=>show(i);
+ $("tabs").appendChild(b);
+ const panel=document.createElement("section");
+ panel.className="panel"+(i===0?" active":"");
+ panel.id="panel"+i;
+ panel.innerHTML=`
+   <h2>${a.emoji} ${a.name}</h2>
+   <p class="instruction">${instructions(a.type)}</p>
+   <div class="progress"><div class="bar" id="bar${i}"></div></div>
+   <div id="content${i}"></div>
+ `;
+ $("panels").appendChild(panel);
+});
+function instructions(type){
+ return {
+ math:"Solve the maths problems. Choose the correct answer!",
+ signs:"Choose the correct maths sign.",
+ compare:"Look carefully. Which number is bigger?",
+ teen:"Listen carefully. Is it a teen number or a ty number?",
+ vowels:"Find the vowels and consonants.",
+ phonics:"Listen and find the first sound!",
+ words:"Is it a noun, a verb or an adjective?",
+ sentences:"Put the words in the correct order!"
+ }[type];
+}
+function show(i){
+ document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+ $("panel"+i).classList.add("active");
+ $("tabs").children[i].classList.add("active");
+ if(!current[i] || current[i].done) start(i);
+}
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function speak(word){
+ if(!("speechSynthesis" in window))return;
+ speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(word);
+ u.lang="en-US";u.rate=.8;speechSynthesis.speak(u);
+}
+function start(i){
+ const type=activities[i].type;
+ current[i]={q:0,correct:0,done:false};
+ makeQuestion(i,type);
+}
+function makeQuestion(i,type){
+ const state=current[i];
+ const el=$("content"+i);
+ if(state.q>=8){
+   state.done=true;
+   el.innerHTML=`<div class="question"><div class="big">🏆 Well done!</div>
+   <p>You finished this activity!</p><p>You got ${state.correct} out of 8 correct answers.</p>
+   <button class="action next" onclick="start(${i})">Play again ↻</button></div>`;
+   $("bar"+i).style.width="100%";
+   return;
+ }
+ $("bar"+i).style.width=(state.q/8*100)+"%";
+ const q=question(type);
+ el.innerHTML=`
+  <div class="question">
+   <div style="color:#8a9bb0">Question ${state.q+1} of 8</div>
+   <div class="big">${q.display}</div>
+   ${q.listen?`<button class="action" onclick="speak('${q.listen}')">🔊 Listen</button>`:""}
+  </div>
+  <div class="options" id="options${i}"></div>
+  <div class="feedback" id="feedback${i}"></div>
+  <div class="hint" id="hint${i}"></div>
+  <div class="actions">
+   <button class="action" onclick="hint(${i},'${escapeText(q.hint)}')">💡 Hint</button>
+   <button class="action next" id="next${i}" disabled onclick="advance(${i})">Next ➜</button>
+  </div>`;
+ shuffle(q.options).forEach(opt=>{
+   const b=document.createElement("button");
+   b.className="choice";b.textContent=opt;
+   b.onclick=()=>answer(i,b,opt,q.answer);
+   $("options"+i).appendChild(b);
+ });
+ state.answer=false;
+}
+function escapeText(s){return s.replace(/'/g,"\\'")}
+function hint(i,text){$("hint"+i).textContent="💡 "+text}
+function answer(i,btn,opt,correct){
+ if(current[i].answer)return;
+ current[i].answer=true;
+ const buttons=[...$("options"+i).children];
+ buttons.forEach(b=>{
+   b.disabled=true;
+   if(b.textContent===correct)b.classList.add("correct");
+ });
+ if(opt===correct){
+   score+=10;current[i].correct++;
+   $("feedback"+i).textContent="🌟 Excellent! That's correct!";
+   $("feedback"+i).style.color="#279365";
+ }else{
+   btn.classList.add("wrong");
+   $("feedback"+i).textContent="Good try! The correct answer is "+correct+".";
+   $("feedback"+i).style.color="#c16b6b";
+ }
+ $("score").textContent=score;
+ $("next"+i).disabled=false;
+}
+function advance(i){current[i].q++;makeQuestion(i,activities[i].type)}
+
+function question(type){
+ let a,b,n,opts,answer,display,hint,listen;
+ if(type==="math"){
+   const op=pick(["+","-"]);
+   a=1+Math.floor(Math.random()*10);
+   b=1+Math.floor(Math.random()*(op==="-"?a:10));
+   answer=String(op==="+"?a+b:a-b);
+   display=`${a} ${op} ${b} = ?`;
+   opts=[answer,String(Number(answer)+1),String(Math.max(0,Number(answer)-2)),String(Number(answer)+3)];
+   hint=op==="+"?"Plus means put numbers together. Count on!":"Minus means take away. Count backwards!";
+ }
+ if(type==="signs"){
+   a=1+Math.floor(Math.random()*9);b=1+Math.floor(Math.random()*9);
+   const op=pick(["+","-","="]);
+   if(op==="+"){display=`${a} ? ${b} = ${a+b}`;answer="+"}
+   else if(op==="-"){display=`${a+b} ? ${b} = ${a}`;answer="-"}
+   else{display=`${a+b} - ${b} ? ${a}`;answer="="}
+   opts=["+","−","="];
+   if(answer==="-")display=display.replace("?","?");
+   hint="Plus adds. Minus takes away. Equals means the same!";
+ }
+ if(type==="compare"){
+   a=1+Math.floor(Math.random()*20);b=1+Math.floor(Math.random()*20);
+   answer=a>b?">":a<b?"<":"=";
+   display=`${a}  ?  ${b}`;
+   opts=[">","<","="];
+   hint="The open mouth points to the bigger number!";
+ }
+ if(type==="teen"){
+   const pairs=[[13,30],[14,40],[15,50],[16,60],[17,70],[18,80],[19,90]];
+   const p=pick(pairs);const num=pick(p);
+   answer=String(num);
+   display="Which number do you hear?";
+   listen=num===p[0]?numberWords[p[0]]:numberWords[p[1]];
+   opts=[String(num),String(num===p[0]?p[1]:p[0]),String(pick([11,12,20,100]))];
+   hint="TEEN has a strong sound at the end. TY sounds like the letter T.";
+ }
+ if(type==="vowels"){
+   const letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+   const letter=pick(letters);
+   answer="AEIOU".includes(letter)?"Vowel":"Consonant";
+   display=`${letter}`;
+   opts=["Vowel","Consonant"];
+   hint="The vowels are A, E, I, O and U.";
+ }
+ if(type==="phonics"){
+   const items=[
+    ["🐱 CAT","C"],["🍎 APPLE","A"],["🐶 DOG","D"],["☀️ SUN","S"],
+    ["🐟 FISH","F"],["⚽ BALL","B"],["🍋 LEMON","L"],["🌙 MOON","M"],
+    ["🐸 FROG","F"],["🦁 LION","L"],["🐰 RABBIT","R"],["🍊 ORANGE","O"]
+   ];
+   const p=pick(items);display=p[0];answer=p[1];
+   opts=[answer,...shuffle("ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")).filter(x=>x!==answer).slice(0,3)];
+   listen=p[0].split(" ").slice(1).join(" ").toLowerCase();
+   hint="Say the word slowly. What sound can you hear first?";
+ }
+ if(type==="words"){
+   const items=[
+    ["APPLE","Noun"],["RUN","Verb"],["HAPPY","Adjective"],["DOG","Noun"],
+    ["JUMP","Verb"],["BIG","Adjective"],["SCHOOL","Noun"],["SING","Verb"],
+    ["SMALL","Adjective"],["BOOK","Noun"],["PLAY","Verb"],["FUNNY","Adjective"]
+   ];
+   const p=pick(items);display=p[0];answer=p[1];
+   opts=["Noun","Verb","Adjective"];
+   hint="A noun is a person, place or thing. A verb is an action. An adjective describes something.";
+ }
+ if(type==="sentences"){
+   const sentences=[
+    ["I","like","apples"],["She","has","a","cat"],["He","can","run"],
+    ["The","dog","is","big"],["I","am","happy"],["We","play","football"],
+    ["It","is","a","sunny","day"],["My","cat","is","small"]
+   ];
+   const p=pick(sentences);answer=p.join(" ");
+   display="Put the words in order!";
+   opts=shuffle(p);
+   hint="Start with a capital letter. Finish with a full stop.";
+   return {display,answer,options:opts,hint};
+ }
+ return {display,answer,options:shuffle([...new Set(opts)]),hint,listen};
+}
+const numberWords={
+ 13:"thirteen",30:"thirty",14:"fourteen",40:"forty",
+ 15:"fifteen",50:"fifty",16:"sixteen",60:"sixty",
+ 17:"seventeen",70:"seventy",18:"eighteen",80:"eighty",
+ 19:"nineteen",90:"ninety"
+};
+</script>
+</body>
+</html>
